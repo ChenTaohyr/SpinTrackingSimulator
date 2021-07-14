@@ -1,0 +1,3 @@
+ParticleNum=100 
+InitialPolarizationDegree=0.8
+
