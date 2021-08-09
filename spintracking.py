@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 import sys
-
+import source.py
       
 file_name = sys.argv[1]           #Get input file
 
@@ -20,3 +20,5 @@ while True:                      #Read every parameters and save them in dir
 f.close()   
     
 print(parameters)
+print(parameters['InitialPolarizationDegree'])
+Initialize(parameters['InitialPolarizationDegree'])
