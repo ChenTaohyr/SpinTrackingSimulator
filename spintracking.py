@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 import sys
-import source.py
+import source
       
 file_name = sys.argv[1]           #Get input file
 
@@ -19,6 +19,13 @@ while True:                      #Read every parameters and save them in dir
              
 f.close()   
     
-print(parameters)
-print(parameters['InitialPolarizationDegree'])
-Initialize(parameters['InitialPolarizationDegree'])
+print('parameters: ' ,parameters)
+
+Spinor=\
+source.Initialize(float(parameters['InitialPolarizationDegree']),int(parameters['ParticleNum']))
+#print(Spinor)
+G=0.001159652
+GGamma=G*1
+SpinorAfterArc=source.Arc(Spinor,GGamma)
+Spinor2=source.Snake(SpinorAfterArc)
+#print(Spinor2)
