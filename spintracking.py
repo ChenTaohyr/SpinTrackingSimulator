@@ -68,7 +68,7 @@ for i in range(8000):
 
 #Draw the picture of the change of porlization degree
 #print(PorPlotX)
-print(PorPlotY)
+#print(PorPlotY)
 plt.scatter(PorPlotX, PorPlotY)
 plt.show()
 
