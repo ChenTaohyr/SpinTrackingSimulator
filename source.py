@@ -36,8 +36,17 @@ def Snake(Spinor):
     Length=len(Spinor)
     for i in range(Length):
         a=Spinor[i][0]
-        Spinor[i][0]=Spinor[i][1]
-        Spinor[i][1]=-1*a
+        Spinor[i][0]=-1*Spinor[i][1]
+        Spinor[i][1]=a
+    return Spinor
+
+#A full snake with angle pi,snake axis on transverse radial direction.
+def Snake2(Spinor):
+    Length=len(Spinor)
+    for i in range(Length):
+        a=Spinor[i][0]
+        Spinor[i][0]=-1j*Spinor[i][1]
+        Spinor[i][1]=-1j*a
     return Spinor
 
 #rotate into resonance precessing frame ,apply the resonance kick then rotate back to particle rest frame
@@ -76,8 +85,9 @@ def CalPorDegree(Spinor):
     sum=0
     for i in sigma:
         sum=sum+i
-        Pordegree=sum/Length
-    print(sigma)
+        
+    Pordegree=sum/Length
+    #print(sigma)
 
     return Pordegree
 

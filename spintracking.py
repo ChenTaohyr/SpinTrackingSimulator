@@ -4,6 +4,7 @@
 import sys
 import source
 import matplotlib.pylab as pyl
+import matplotlib.pyplot as plt
 import numpy as np
       
 file_name = sys.argv[1]           #Get input file
@@ -42,30 +43,34 @@ PorPlotX=[]
 #Resonance tune K is selected as the integer nearest GGamma
 
 
-for i in range(300):
+for i in range(8000):
      Gamma=i+100
      GGamma=G*Gamma
      IntGGamma=int(GGamma)
      if (GGamma-IntGGamma>0.5):
           K=IntGGamma+1
           SpinorAfterKick=source.ResonanceKick(Spinor,GGamma,K)
-          Spinor=source.Snake(SpinorAfterKick)
-          if(i%100==0):
+          Spinor=source.Snake2(SpinorAfterKick)
+          if(i%100==1):
                p=source.CalPorDegree(Spinor)
+               #p=source.CalPorDegree(SpinorAfterKick)
                PorPlotX.append(GGamma)
                PorPlotY.append(p)
      else:
           K=IntGGamma
           SpinorAfterKick=source.ResonanceKick(Spinor,GGamma,K)
-          Spinor=source.Snake(SpinorAfterKick)
-          if(i%100==0):
+          Spinor=source.Snake2(SpinorAfterKick)
+          if(i%100==1):
                p=source.CalPorDegree(Spinor)
+               #p=source.CalPorDegree(SpinorAfterKick)
                PorPlotX.append(GGamma)
                PorPlotY.append(p)
 
 #Draw the picture of the change of porlization degree
-#pyl.plot(PorPlotX, PorPlotY)
-#pyl.show()
+#print(PorPlotX)
+print(PorPlotY)
+plt.scatter(PorPlotX, PorPlotY)
+plt.show()
 
 
 
