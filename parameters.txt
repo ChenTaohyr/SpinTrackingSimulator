@@ -1,3 +1,9 @@
-ParticleNum=100 
-InitialPolarizationDegree=0.8
-
+ParticleNum=1 
+InitialPolarizationDegree=1
+UseSnake=0
+phis=0
+phi=3.141592654
+ResonanceFile=resonance.txt
+InitialGamma=10000
+FinalGamma=10001
+EnergyRisePerTurn=1
