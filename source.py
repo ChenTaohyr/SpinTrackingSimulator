@@ -24,12 +24,17 @@ def Initialize(InitialPolarizationDegree,ParticleNum):
     return Spinor
 
 #Arc with angle 2pi,without any resonance
+#Arc that do not change the spinor in memory,only return a spinor
 def Arc(Spinor,GGamma):
     Length=len(Spinor)
+    SpinorInM=[]
     for i in range(Length):
-        Spinor[i][0]=Spinor[i][0]*(math.cos(GGamma*math.pi)-math.sin(GGamma*math.pi)*1j)
-        Spinor[i][1]=Spinor[i][1]*(math.cos(GGamma*math.pi)+math.sin(GGamma*math.pi)*1j)
-    return Spinor
+        SpinorU=Spinor[i][0]*(math.cos(GGamma*math.pi)-math.sin(GGamma*math.pi)*1j)
+        SpinorD=Spinor[i][1]*(math.cos(GGamma*math.pi)+math.sin(GGamma*math.pi)*1j)
+        #SpinorInM[i][0]=Spinor[i][0]*(math.cos(GGamma*math.pi)-math.sin(GGamma*math.pi)*1j)
+        #SpinorInM[i][1]=Spinor[i][1]*(math.cos(GGamma*math.pi)+math.sin(GGamma*math.pi)*1j)
+        SpinorInM.append([SpinorU,SpinorD])
+    return SpinorInM
 
 #A full snake with angle pi,snake axis lies on the beam direction.
 #def Snake(Spinor):
@@ -69,19 +74,14 @@ def Snake(Spinor,phi,phis):
         Spinor[i][0]=m11*Spinor[i][0]+m12*Spinor[i][1]
         Spinor[i][1]=a*m21+m22*Spinor[i][1]
 
-    return Spinor
+    #return Spinor
+    return
   
 
 
 
-
-
-
-
-
-
 #rotate into resonance precessing frame ,apply the resonance kick then rotate back to particle rest frame
-####(the strength of resonance is replaced by a estimated value of 0.002*GGamma )deleted####
+####(the strength of resonance is replaced by a estimated value of 0.002*GGamma )####deleted####
 #eplison is the strength of resonance ,it is a complex
 #The calculation is based on the Spin Transfer Matrix of constant GGamma ,suitable for all kinds of resonance
 #The resonance kick is applied in a complete turn ie. theta from 0 to 2pi
@@ -91,7 +91,13 @@ def ResonanceKick(Spinor,GGamma,K,eplison):
     lamda=math.sqrt(delta*delta+abs(eplison)*abs(eplison))
     b=(abs(eplison)*math.sin(lamda*math.pi))/lamda
     a=math.sqrt(1-b*b)
-    c=math.atan((delta*math.tan(lamda*math.pi)/lamda))
+
+    if (lamda-int(lamda)>0.5):       #Fix the error that arctan(Tan(x)) may lost some phase of a (integer*pi)
+        AngleNum=int(lamda+1)
+    else:
+        AngleNum=int(lamda)
+
+    c=math.atan((delta*math.tan(lamda*math.pi))/lamda)+AngleNum*math.pi
     d=-1*cmath.phase(eplison)
     
     Length=len(Spinor)
@@ -99,11 +105,11 @@ def ResonanceKick(Spinor,GGamma,K,eplison):
         
         x=Spinor[i][0]
         Spinor[i][0]=Spinor[i][0]*a*cmath.exp((c-K*math.pi)*1j)+1j*b*Spinor[i][1]*cmath.exp(-1j*(d+K*math.pi))
-        Spinor[i][1]=x*(-1j)*b*cmath.exp(1j*(d+K*math.pi))+Spinor[i][1]*a*cmath.exp(-1j*(c-K*math.pi))
+        Spinor[i][1]=x*(1j)*b*cmath.exp(1j*(d+K*math.pi))+Spinor[i][1]*a*cmath.exp(-1j*(c-K*math.pi))
        
 
-
-    return Spinor
+    return
+    #return Spinor
 
 
 
@@ -125,4 +131,14 @@ def CalPorDegree(Spinor):
 
     return Pordegree
 
+
+#To calculate the modules of Spinors 
+def CalModules(Spinor):
+    Length=len(Spinor)
+    module=[]
+    for i in range(Length):
+        Module=abs(Spinor[i][0])*abs(Spinor[i][0])+abs(Spinor[i][1])*abs(Spinor[i][1])
+        module.append(Module)
+    
+    return module
 

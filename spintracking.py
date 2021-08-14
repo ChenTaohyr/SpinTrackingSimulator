@@ -41,11 +41,13 @@ while True:
          if not line:
               break
          else:
-             ResonanceData[float(line.split(' ')[0])] = float(line.split(' ')[1] )
+              ResonanceStrength=float(line.split(' ')[1])+1j*float(line.split(' ')[2])   #Read and save resonance strength as complex
+              print(ResonanceStrength)
+              ResonanceData[float(line.split(' ')[0])] =ResonanceStrength
              
              
 f.close() 
-#print(ResonanceData)
+
 
 #SpinorAfterArc=source.Arc(Spinor,GGamma)
 #Spinor2=source.Snake(SpinorAfterArc)
@@ -90,26 +92,51 @@ G=0.001159652
 
 
 #Implement the acceleration
-#Temporarily, only resonance that close to GGamma is considered
+###deleted###Temporarily, only resonance that close to GGamma is considered###
 InitialGamma=int(parameters['InitialGamma'])
 FinalGamma=int(parameters['FinalGamma'])
-EnergyRisePerTurn=int(parameters['EnergyRisePerTurn'])
+EnergyRisePerTurn=float(parameters['EnergyRisePerTurn'])
 Gamma=InitialGamma
+
+'''
+#for Test , only Arc is implemented to the particle
+Gamma2=InitialGamma
+
+while (Gamma2<FinalGamma):
+          GGamma=G*Gamma2
+          SpinorTest=source.Arc(Spinor,GGamma)
+          Gamma2=Gamma2+EnergyRisePerTurn
+
+print(Spinor)
+print('final spinor_Arc', SpinorTest)
+print('Modules of the spinors_Arc', source.CalModules(SpinorTest))
+p2=source.CalPorDegree(SpinorTest)
+print('final polarization degree_Arc',p2)
+
+'''
+
 #ResonanceNum=len(ResonanceData)
 #print(ResonanceNum)
 while (Gamma<FinalGamma):
           GGamma=G*Gamma
 
           for i in ResonanceData:
-               if(abs(GGamma-i)<=0.5 ):
-                    Spinor=source.ResonanceKick(Spinor,GGamma,i,complex(GGamma*ResonanceData[i]))
+               #if(abs(GGamma-i)<=0.5 ):
+                    #Spinor=source.ResonanceKick(Spinor,GGamma,i,complex(GGamma*ResonanceData[i]))
+                    source.ResonanceKick(Spinor,GGamma,i,complex(ResonanceData[i]))  #Resonance Strength not rely on GGamma
+
 
           if (parameters['UseSnake']=='1'):
-               Spinor=source.Snake(Spinor,float(parameters['phi']),float(parameters['phis']))
-          Gamma=Gamma+EnergyRisePerTurn
+               source.Snake(Spinor,float(parameters['phi']),float(parameters['phis']))
 
+          Gamma=Gamma+EnergyRisePerTurn
+print('final spinor', Spinor)
+print('Modules of the spinors', source.CalModules(Spinor))
 p=source.CalPorDegree(Spinor)
-print(p)
+print('final polarization degree',p)
+alpha=G*EnergyRisePerTurn/(2*math.pi)
+_4piq=math.pi*abs(ResonanceStrength)*abs(ResonanceStrength)/(2*alpha)
+print('4piq',_4piq)
 
 
 
@@ -120,7 +147,3 @@ print(p)
 #print(PorPlotY)
 #plt.scatter(PorPlotX, PorPlotY)
 #plt.show()
-
-
-
-
