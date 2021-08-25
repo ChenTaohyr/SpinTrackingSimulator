@@ -1,0 +1,3 @@
+Arc: angle=3.28318530717958647692528676656
+Snake: direction_phis=0 , strength=0
+Arc: angle=3
