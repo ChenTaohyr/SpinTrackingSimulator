@@ -118,7 +118,7 @@ def ResonanceKick(Spinor,GGamma,K,eplison):
     for i in range(Length):
         
         x=Spinor[i][0]
-        Spinor[i][0]=Spinor[i][0]*a*cmath.exp((c-K*math.pi)*1j)+1j*b*Spinor[i][1]*cmath.exp(-1j*(d+K*math.pi))
+        Spinor[i][0]=Spinor[i][0]*a*cmath.exp((c-K*math.pi)*1j)+1j*b*Spinor[i][1]*cmath.exp(-1j*(d+K*math.pi))#!!!Here pi should be 2pi!!!
         Spinor[i][1]=x*(1j)*b*cmath.exp(1j*(d+K*math.pi))+Spinor[i][1]*a*cmath.exp(-1j*(c-K*math.pi))
        
 

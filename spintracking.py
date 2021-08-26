@@ -150,10 +150,10 @@ while (Gamma<FinalGamma):
                     ArcAngle.append(theta2)
                     
                     for j in ResonanceData:
+                         
                          source.PartialResonanceKick(Spinor,GGamma,j,complex(ResonanceData[j]),theta1,theta2)
+                        
                     
-                    #print('Arc cross',theta1,theta2)
-
                     ArcCount=ArcCount+1
 
                if(LatticeSorting[i]=='Snake'):
@@ -196,6 +196,23 @@ if(parameters['OutputCalibrateFSEquationData']=='1'):
      fdata.write("\n")
      print("Successfully print", fdata)
      fdata.close()
+
+if(parameters['OutputEpsilon_PData']=='1'):
+     #alpha=G*EnergyRisePerTurn/(2*math.pi)
+     #_4piq=math.pi*abs(ResonanceStrength)*abs(ResonanceStrength)/(2*alpha)
+     epsilon=abs(ResonanceStrength)
+     #print('4piq',_4piq)
+
+     fdata = open("Epsilon_P.txt", 'a+')  # a+ 如果文件不存在就创建。存在就在文件内容的后面继续追加
+
+     p=source.CalPorDegree(Spinor)
+     fdata.write(str(epsilon))
+     fdata.write(" ")
+     fdata.write(str(p))
+     fdata.write("\n")
+     #print("Successfully print", fdata)
+     fdata.close()
+
 FinalDirection=source.CalDirectionofSpinor(Spinor)
 print('Final Spinor',Spinor)
 print('Final Direction',FinalDirection)
