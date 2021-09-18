@@ -6,7 +6,7 @@ import copy
 G=0.001159652
 
 #Initialize of the beam
-def Initialize(InitialPolarizationDegree,ParticleNum):
+def Initialize(InitialPolarizationDegree,ParticleNum):   #Wrong if initial polarization degree is not zero and not enough particle
     #print 'Initializing...'
     #print('InitialPolarizationDegree ' ,InitialPolarizationDegree)
     #print('particlenum ' ,ParticleNum)
@@ -14,16 +14,24 @@ def Initialize(InitialPolarizationDegree,ParticleNum):
 
 #for a polarization degree P beam ,assume all electrons are spin up or spin down ,
 #the number of spin up  electrons is N* (P+1)/2, in this case assume spinupNum is integer
-    SpinUpNum=((InitialPolarizationDegree+1)/2)*ParticleNum
+    #SpinUpNum=((InitialPolarizationDegree+1)/2)*ParticleNum
     Spinor=[]
+    #for i in range(ParticleNum):
+    #        if i < SpinUpNum:
+    #           Spinor.append([complex(1),complex(0)])
+    #        else:
+    #            Spinor.append([complex(0),complex(1)])
+
+
+    #Modified initialize program
     for i in range(ParticleNum):
-            if i < SpinUpNum:
-                Spinor.append([complex(1),complex(0)])
-            else:
-                Spinor.append([complex(0),complex(1)])
+       
+        up=math.sqrt((InitialPolarizationDegree+1)/2)
+        down=math.sqrt((1-InitialPolarizationDegree)/2)
+        Spinor.append([complex(up),complex(down)])
 
     print('Initial Spinor',Spinor)
-    print 'Initialization done'
+    #print 'Initialization done'
     
     return Spinor
 
@@ -36,13 +44,16 @@ def InitializeRandomPhase(InitialPolarizationDegree,ParticleNum):
 
     Spinor=[]
     for i in range(ParticleNum):
-        RandomPhase=1j*random.random()*math.pi
+        RandomPhase1=2j*random.random()*math.pi
+        RandomPhase2=2j*random.random()*math.pi
+        RandomPhase3=2j*random.random()*math.pi
         up=math.sqrt((InitialPolarizationDegree+1)/2)
         down=math.sqrt((1-InitialPolarizationDegree)/2)
-        Spinor.append([up*cmath.exp(RandomPhase),down*cmath.exp(RandomPhase)])
+        #Spinor.append([up*cmath.exp(RandomPhase1),down*cmath.exp(RandomPhase2)])
+        Spinor.append([up*cmath.exp(RandomPhase1)*cmath.exp(RandomPhase3),down*cmath.exp(RandomPhase3)])    #another approach to generate random phase spinor
            
     print('Initial Spinor',Spinor)
-    print 'Initialization done'
+    #print 'Initialization done'
 
     return Spinor
 
@@ -130,16 +141,34 @@ def PartialResonanceKick(Spinor,GGamma,K,eplison,thetai,thetaf):
     lamda=math.sqrt(delta*delta+abs(eplison)*abs(eplison))
     b=(abs(eplison)*math.sin(lamda*(thetaf-thetai)/2))/lamda
     a=math.sqrt(1-b*b)
+    
+    #if (lamda-int(lamda)>0.5):       #Fix the error that arctan(Tan(x)) may lost some phase of a (integer*pi)
+    #    AngleNum=int(lamda+1)
+    #else:
+    #    AngleNum=int(lamda)     
 
-    if (lamda-int(lamda)>0.5):       #Fix the error that arctan(Tan(x)) may lost some phase of a (integer*pi)
-        AngleNum=int(lamda+1)
+    #Fix Error :The above code is only correct for 2 pi arc
+    #phaseNum=lamda*(thetaf-thetai)/(2*math.pi)
+    #if (phaseNum-int(phaseNum)>0.5):       #Fix the error that arctan(Tan(x)) may lost some phase of a (integer*pi)
+    #    AngleNum=int(phaseNum)+1
+    #else:
+    #    AngleNum=int(phaseNum)
+
+
+    #The above 2 phase are all wrong
+
+    cos_phi=math.cos(lamda*(thetaf-thetai)/2)
+    if (cos_phi>=0):
+        AngleNum=0
+
     else:
-        AngleNum=int(lamda)
+        AngleNum=1
+    
 
     c=math.atan((delta*math.tan(lamda*(thetaf-thetai)/2))/lamda)+AngleNum*math.pi
     #c=math.atan((delta*math.tan(lamda*(thetaf-thetai)/2))/lamda)
     d=-1*cmath.phase(eplison)
-    
+    #print(c,delta)
     Length=len(Spinor)
     for i in range(Length):
         
@@ -169,6 +198,17 @@ def CalPorDegree(Spinor):
     return Pordegree
 
 
+def CalPorDegreeOneByOne(Spinor):
+    sigma=[]
+    Length=len(Spinor)
+    for i in range(Length):
+        sigmai=abs(Spinor[i][0])*abs(Spinor[i][0])-abs(Spinor[i][1])*abs(Spinor[i][1])
+        sigma.append(sigmai)
+
+
+
+    return sigma
+
 #To calculate the modules of Spinors 
 def CalModules(Spinor):
     Length=len(Spinor)
@@ -197,20 +237,25 @@ def CalPorDegreeX(Spinor):
     sigma=[]
     Length=len(Spinor)
     for i in range(Length):
-        #UCon=Spinor[i][0].real-Spinor[i][0].imag
-        #DCon=Spinor[i][1].real-Spinor[i][1].imag
-        spinXup=(Spinor[i][0]+Spinor[i][1])/math.sqrt(2)
-        spinXdown=(Spinor[i][0]-Spinor[i][1])/math.sqrt(2)
-        sigmai=abs(spinXup)*abs(spinXup)-abs(spinXdown)*abs(spinXdown)
-        sigma.append(sigmai)
-    sum=0
-    for i in sigma:
-        sum=sum+i
+        UCon=Spinor[i][0].real-1j*Spinor[i][0].imag
+        DCon=Spinor[i][1].real-1j*Spinor[i][1].imag
+
+        #spinXup=(Spinor[i][0]+Spinor[i][1])/math.sqrt(2)
+        #spinXdown=(Spinor[i][0]-Spinor[i][1])/math.sqrt(2)
+        #sigmai=abs(spinXup)*abs(spinXup)-abs(spinXdown)*abs(spinXdown)
+        #Verified program to calculate Polarization degree
+        sigmai=UCon*Spinor[i][1]+DCon*Spinor[i][0]
+        if(sigmai.imag>0.0001):
+            print('ERROR: S1 not real S1=',sigmai)
+        sigma.append(sigmai.real)
+    #sum=0
+    #for i in sigma:
+    #    sum=sum+i
         
-    Pordegree=sum/Length
+    #Pordegree=sum/Length
   
 
-    return Pordegree
+    return sigma
 
 def CalPorX(Spinor):
     sigma=[]
@@ -234,18 +279,23 @@ def CalPorDegreeY(Spinor):
     sigma=[]
     Length=len(Spinor)
     for i in range(Length):
-        spinYup=((Spinor[i][0]-1j*Spinor[i][1])*math.sqrt(2))/2
-        spinYdown=((Spinor[i][0]+1j*Spinor[i][1])*math.sqrt(2))/2
-        sigmai=abs(spinYup)*abs(spinYup)-abs(spinYdown)*abs(spinYdown)
-        sigma.append(sigmai)
-    sum=0
-    for i in sigma:
-        sum=sum+i
+        UCon=Spinor[i][0].real-1j*Spinor[i][0].imag
+        DCon=Spinor[i][1].real-1j*Spinor[i][1].imag
         
-    Pordegree=sum/Length
+        #spinYup=((Spinor[i][0]-1j*Spinor[i][1])*math.sqrt(2))/2
+        #spinYdown=((Spinor[i][0]+1j*Spinor[i][1])*math.sqrt(2))/2
+        #sigmai=abs(spinYup)*abs(spinYup)-abs(spinYdown)*abs(spinYdown)
+        sigmai=-1j*(UCon*Spinor[i][1]-DCon*Spinor[i][0])
+        if(sigmai.imag>0.0001):
+            print('ERROR: S2 not real, S2= ',sigmai)
+        sigma.append(sigmai.real)
+    #sum=0
+    #for i in sigma:
+    #    sum=sum+i
+        
+    #Pordegree=sigma
   
-
-    return Pordegree
+    return sigma
 
 def CalPorY(Spinor):
     sigma=[]
@@ -267,36 +317,41 @@ def CalPorY(Spinor):
 def CalDirectionofSpinor(Spinor):     #2 angle varibles can describe a direction ,theta from 0 to pi ,phi from 0 to 2pi,
     Length=len(Spinor)                #for phi,it is neccessary to use both S1 and S2 to verify wheather phi locates on 0 to pi or pi to 2pi
     Direction=[]
+    S1=CalPorDegreeX(Spinor)
+    S3=CalPorDegreeOneByOne(Spinor)
+    S2=CalPorDegreeY(Spinor)
     for i in range(Length):
-        S1=CalPorDegreeX(Spinor)
-        S3=CalPorDegree(Spinor)
-        S2=CalPorDegreeY(Spinor)
+        #S1=CalPorDegreeX(Spinor)
+        #S3=CalPorDegree(Spinor)
+        #S2=CalPorDegreeY(Spinor)
         try:
-            theta=math.acos(S3)
+            theta=math.acos(S3[i])
         except ValueError:
-            if(S3>0):
+            if(S3[i]>0):
                 theta=0
-                print('ValveError Happens,theta is set to 0 S3=',S3)
+                print('ValveError Happens,theta is set to 0 ;S3=',S3[i])
             else:
                 theta=3.1415926535898
-                print('ValveError Happens,theta is set to pi S3=',S3)
+                print('ValveError Happens,theta is set to pi ;S3=',S3[i])
 
 
         
-        if(theta==0):
+        if(theta==0 or theta==3.1415926535898):
             phi='non'
         else:
-            if(S2>=0):
-                phi=math.acos(S1/math.sin(theta))
+            if(S2[i]>=0):
+                
+                phi=math.acos((S1[i]/math.sin(theta))-0.0000000000001)   #To avoid math domain error
             else:
-                phi=2*math.pi-math.acos(S1/math.sin(theta))
+                
+                phi=2*math.pi-math.acos((S1[i]/math.sin(theta))-0.0000000000001)
         Direction.append([theta,phi])
     return Direction
 
 def GeneratePartialSnakeSpin(SnakeStrengthphi,GGamma):  #Generate a Spinor on direction of n0 with a partial snake ,partial snake is on e2 direction
     cc=math.cos(math.pi*GGamma)*math.cos(SnakeStrengthphi/2)
     pivues=math.acos(cc)
-    cosalpha1=0
+    cosalpha1=0.
     cosalpha2=math.sin(SnakeStrengthphi/2)/math.sin(pivues)
     cosalpha3=(math.sin(math.pi*GGamma)*math.cos(SnakeStrengthphi/2))/math.sin(pivues)
     S1=cosalpha1
@@ -315,3 +370,15 @@ def GeneratePartialSnakeSpin(SnakeStrengthphi,GGamma):  #Generate a Spinor on di
     #Spinor[0][1]=math.sin(theta/2)*cmath.exp(1j*phi)
 
     return Spinor
+
+
+def Cal0_3PolarizationDegree(Spinor):
+    #Length=len(Spinor)
+    #for i in range(Length):
+    S3=CalPorDegreeOneByOne(Spinor)[0]
+    S2=CalPorDegreeX(Spinor)[0]
+    theta=CalDirectionofSpinor(Spinor)[0][0]
+    print('theta= ',theta)
+    S_Direction=S3*math.cos(theta)+S2*math.sin(theta)
+    return S_Direction
+    

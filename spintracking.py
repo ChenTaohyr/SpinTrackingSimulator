@@ -41,6 +41,7 @@ ResonanceFile=parameters['ResonanceFile']
 
 f=open(ResonanceFile)
 ResonanceData={}
+ResonanceLocationOrder=[]
 
 while True:                      
          line=f.readline()
@@ -48,16 +49,16 @@ while True:
          if not line:
               break
          else:
-              ResonanceStrength=float(line.split(' ')[1])+1j*float(line.split(' ')[2])   #Read and save resonance strength as complex
-              #print(ResonanceStrength)
-              ResonanceData[float(line.split(' ')[0])] =ResonanceStrength
+              ResonanceStrength=float(line.split('\t')[2])+1j*float(line.split('\t')[3])   #Read and save resonance strength as complex
+
+              ResonanceData[float(line.split('\t')[0])] =ResonanceStrength
+              ResonanceLocationOrder.append(float(line.split('\t')[0]))
                        
 f.close() 
-
+ResonanceLocationOrder.append(99999.)     #Just for convenience in later calculation ,no practical meaning
 
 #read lattice data
 LatticeFile=parameters['LatticeFile']
-#print(ResonanceFile,type(ResonanceFile))
 f=open(LatticeFile)
 Lattice=[]
 LatticeSorting=[]
@@ -76,10 +77,8 @@ f.close()
 #To read and save lattice information
 LatticeNum=len(Lattice)
 ArcData=[]
-#ArcCount=0
 SnakeDirection=[]
 SnakeStrength=[]
-#SnakeCount=0
 for i in range(LatticeNum):
      LatticeName=Lattice[i].split(": ")[0]
      if(LatticeName=="Snake"):
@@ -107,14 +106,14 @@ if(parameters['GenerateSpin']=='1'):
                print('ERROR:Modules of Spinor is not normalized ')
                break
 
-
-#Spinor=source.GeneratePartialSnakeSpin(SnakeStrength,GGamma)
+#For testing of  partial snake, use when parameters 'Initialize=0'
+#Spinor=source.GeneratePartialSnakeSpin(1.57079632679489661923,22.0334)     
 
 
 if(parameters['Initialize']=='1'):
      
-     #Spinor=source.InitializeRandomPhase(float(parameters['InitialPolarizationDegree']),int(parameters['ParticleNum']))
-     Spinor=source.Initialize(float(parameters['InitialPolarizationDegree']),int(parameters['ParticleNum']))
+     Spinor=source.InitializeRandomPhase(float(parameters['InitialPolarizationDegree']),int(parameters['ParticleNum']))
+     #Spinor=source.Initialize(float(parameters['InitialPolarizationDegree']),int(parameters['ParticleNum']))
 
      SpinModule2=source.CalModules(Spinor)    #The modules of spinors should be 1 
      ParNum=len(SpinModule2)
@@ -122,6 +121,27 @@ if(parameters['Initialize']=='1'):
           if(abs(SpinModule2[i]-1)>0.0000001):
                print('ERROR:Modules of Spinor is not normalized ')
                break
+
+
+#For testing of a different initialize method .Use when parameters'Initialize =0'
+'''
+Spinor1=source.InitializeRandomPhase(1.,50)
+Spinor2=source.InitializeRandomPhase(0.,50)
+Spinor3=source.InitializeRandomPhase(0.9,50)
+Spinor4=source.InitializeRandomPhase(0.1,50)
+Spinor5=source.InitializeRandomPhase(0.8,50)
+Spinor6=source.InitializeRandomPhase(0.2,50)
+Spinor7=source.InitializeRandomPhase(0.7,50)
+Spinor8=source.InitializeRandomPhase(0.3,50)
+Spinor9=source.InitializeRandomPhase(0.6,50)
+Spinor10=source.InitializeRandomPhase(0.4,50)
+Spinor11=source.InitializeRandomPhase(0.5,50)
+Spinor12=source.InitializeRandomPhase(0.5,50)
+Spinor=Spinor1+Spinor2+Spinor3+Spinor4+Spinor5+Spinor6+Spinor7+Spinor8+Spinor9+Spinor10+Spinor11+Spinor12
+'''
+
+
+
 
 InitialDirection=source.CalDirectionofSpinor(Spinor)
 print('Initial Direction',InitialDirection)
@@ -132,42 +152,146 @@ FinalGamma=int(parameters['FinalGamma'])
 EnergyRisePerTurn=float(parameters['EnergyRisePerTurn'])
 Gamma=InitialGamma
 
-CirleNum=0
+CircleNum=0
 ArcAngle=[]
 ArcAngle.append(0)
-#print(ArcData)
-while (Gamma<FinalGamma):
-          GGamma=G*Gamma
-          ArcCount=0
-          SnakeCount=0
-          for i in range(LatticeNum):
+if(parameters['SingleResonance']=='1'):
+     while (Gamma<FinalGamma):
+               GGamma=G*Gamma
+               ArcCount=0
+               SnakeCount=0
+               for i in range(LatticeNum):
+                    
+     
+                    if(LatticeSorting[i]=='Arc'):
+                         
+                         theta1=ArcAngle[ArcCount]
+                         theta2=theta1+ArcData[ArcCount]
+                         ArcAngle.append(theta2)
+     
+                         inputtheta1=theta1+2*math.pi*CircleNum
+                         inputtheta2=theta2+2*math.pi*CircleNum
+                         
+                         for j in ResonanceData:
+                              
+                              source.PartialResonanceKick(Spinor,GGamma,j,complex(ResonanceData[j]),inputtheta1,inputtheta2)
+                              
+                         
+                         ArcCount=ArcCount+1
+     
+                    if(LatticeSorting[i]=='Snake'):
+                         
+                         SnakeStrength_phi=SnakeStrength[SnakeCount]
+                         SnakeDirection_phis=SnakeDirection[SnakeCount]
+     
+                         source.Snake(Spinor,SnakeStrength_phi,SnakeDirection_phis)
+     
+                         SnakeCount=SnakeCount+1
+               
+     
+               CircleNum=CircleNum+1    
+               
+               Gamma=Gamma+EnergyRisePerTurn
+
+
+
+if(parameters['MultipleResonance']=='1'):
+     ResonanceCount=0
+     ResonanceCountForCal=0
+     ResonanceNum=len(ResonanceLocationOrder)
+     FindIfEnoughWidth='0'
+
+     if(parameters['OutputEveryTurnData']=='1'):
+          P_GGamma=[]
+
+     while (Gamma<FinalGamma):
+               GGamma=G*Gamma
+
                
 
-               if(LatticeSorting[i]=='Arc'):
+               while(GGamma>ResonanceLocationOrder[ResonanceCount]):
+                    ResonanceCount=ResonanceCount+1
+                    FindIfEnoughWidth='1'
+
+               ResonanceCountForCal=copy.deepcopy(ResonanceCount)
+               
+               #During the acceleration ,only nearest spin resonance is considered
+               if(ResonanceCount>0 and ResonanceCount<ResonanceNum-1):    
+                    deltaLeft =abs(GGamma-ResonanceLocationOrder[ResonanceCount-1])
+                    deltaRight=abs(GGamma-ResonanceLocationOrder[ResonanceCount])
+                    if(deltaRight>deltaLeft):
+                         ResonanceCountForCal=ResonanceCountForCal-1
+
+               #if(ResonanceCount<ResonanceNum-2 and FindIfEnoughWidth=='1'):          #Find the resonance that do not have enough width
+               #     LeftWidth =(ResonanceLocationOrder[ResonanceCount]-ResonanceLocationOrder[ResonanceCount-1])/2
+               #     RightWidth=(ResonanceLocationOrder[ResonanceCount+1]-ResonanceLocationOrder[ResonanceCount])/2
+               #     if(LeftWidth<5*abs(ResonanceData[ResonanceLocationOrder[ResonanceCount]]) or RightWidth<5*abs(ResonanceData[ResonanceLocationOrder[ResonanceCount]])):
+               #          print('There is not enough width for resonance location at : ',ResonanceLocationOrder[ResonanceCount])
+
+               if(ResonanceCount==ResonanceNum-1):
+                    ResonanceCountForCal=ResonanceCountForCal-1
+
+               FindIfEnoughWidth='0'
+               #The above code is to find which resonance should be included in calculation
+
+               ArcCount=0
+               SnakeCount=0
+               for i in range(LatticeNum):
                     
-                    theta1=ArcAngle[ArcCount]
-                    theta2=theta1+ArcData[ArcCount]
-                    ArcAngle.append(theta2)
-                    
-                    for j in ResonanceData:
+     
+                    if(LatticeSorting[i]=='Arc'):
                          
-                         source.PartialResonanceKick(Spinor,GGamma,j,complex(ResonanceData[j]),theta1,theta2)
-                        
+                         theta1=ArcAngle[ArcCount]
+                         theta2=theta1+ArcData[ArcCount]
+                         ArcAngle.append(theta2)
+     
+                         inputtheta1=theta1+2*math.pi*CircleNum
+                         inputtheta2=theta2+2*math.pi*CircleNum
+
+                         #To move resonance location ,additional module.
+                         #if(abs(ResonanceLocationOrder[ResonanceCountForCal]-int(ResonanceLocationOrder[ResonanceCountForCal])-0.21)<0.000000001):
+                         #     ResoananceK=ResonanceLocationOrder[ResonanceCountForCal]+0.04
+                         #if(abs(ResonanceLocationOrder[ResonanceCountForCal]-int(ResonanceLocationOrder[ResonanceCountForCal])-0.79)<0.000000001):
+                         #     ResoananceK=ResonanceLocationOrder[ResonanceCountForCal]-0.04                    
+                         #source.PartialResonanceKick(Spinor,GGamma,ResoananceK,complex(ResonanceData[ResonanceLocationOrder[ResonanceCountForCal]]),inputtheta1,inputtheta2)
+
+
+                              
+                         source.PartialResonanceKick(Spinor,GGamma,ResonanceLocationOrder[ResonanceCountForCal],complex(ResonanceData[ResonanceLocationOrder[ResonanceCountForCal]]),inputtheta1,inputtheta2)
+                              
+                         
+                         ArcCount=ArcCount+1
+     
+                    if(LatticeSorting[i]=='Snake'):
+                         
+                         SnakeStrength_phi=SnakeStrength[SnakeCount]
+                         SnakeDirection_phis=SnakeDirection[SnakeCount]
+     
+                         source.Snake(Spinor,SnakeStrength_phi,SnakeDirection_phis)
+     
+                         SnakeCount=SnakeCount+1
+               
+     
+               CircleNum=CircleNum+1    
+               
+               IfSaveP=CircleNum%int(parameters['OutputInterval'])
+               if(parameters['OutputEveryTurnData']=='1' and IfSaveP==0):
+                         fdata = open("P_vs_GGamma.txt", 'a+')  
+
+                         p=source.CalPorDegree(Spinor)
+                         fdata.write(str(GGamma))
+                         fdata.write(" ")
+                         fdata.write(str(p))
+                         fdata.write("\n")
+                         fdata.close()
+               
+               Gamma=Gamma+EnergyRisePerTurn
+
                     
-                    ArcCount=ArcCount+1
 
-               if(LatticeSorting[i]=='Snake'):
-                    
-                    SnakeStrength_phi=SnakeStrength[SnakeCount]
-                    SnakeDirection_phis=SnakeDirection[SnakeCount]
 
-                    source.Snake(Spinor,SnakeStrength_phi,SnakeDirection_phis)
 
-                    SnakeCount=SnakeCount+1
-          
 
-          CirleNum=CirleNum+1    
-          Gamma=Gamma+EnergyRisePerTurn
 
 
 SpinModule3=source.CalModules(Spinor)
@@ -178,23 +302,28 @@ for i in range(ParNum):
           break
 
 
-print('Finished accelartion after %d Circles' %CirleNum)
+print('Finished accelartion after %d Circles' %CircleNum)
 
 
 #calcalute for verify F-S Equation and simulation
 if(parameters['OutputCalibrateFSEquationData']=='1'):
      alpha=G*EnergyRisePerTurn/(2*math.pi)
      _4piq=math.pi*abs(ResonanceStrength)*abs(ResonanceStrength)/(2*alpha)
-     #print('4piq',_4piq)
 
-     fdata = open("FSData_test2.txt", 'a+')  # a+ 如果文件不存在就创建。存在就在文件内容的后面继续追加
+     FSFileName=parameters['FSDataFileName']
+     fdata = open(FSFileName, 'a+')  # a+ 如果文件不存在就创建。存在就在文件内容的后面继续追加
 
      p=source.CalPorDegree(Spinor)
+     p_general=p/float(parameters['InitialPolarizationDegree'])
+     #PP=source.Cal0_3PolarizationDegree(Spinor)
      fdata.write(str(_4piq))
      fdata.write(" ")
-     fdata.write(str(p))
+     #fdata.write(str(p))
+     #fdata.write(str(PP))
+     fdata.write(str(p_general))
+
      fdata.write("\n")
-     print("Successfully print", fdata)
+     #print("Successfully print", fdata)
      fdata.close()
 
 if(parameters['OutputEpsilon_PData']=='1'):
@@ -202,8 +331,8 @@ if(parameters['OutputEpsilon_PData']=='1'):
      #_4piq=math.pi*abs(ResonanceStrength)*abs(ResonanceStrength)/(2*alpha)
      epsilon=abs(ResonanceStrength)
      #print('4piq',_4piq)
-
-     fdata = open("Epsilon_P.txt", 'a+')  # a+ 如果文件不存在就创建。存在就在文件内容的后面继续追加
+    
+     fdata = open("Epsilon_P.txt", 'a+') 
 
      p=source.CalPorDegree(Spinor)
      fdata.write(str(epsilon))
@@ -216,83 +345,9 @@ if(parameters['OutputEpsilon_PData']=='1'):
 FinalDirection=source.CalDirectionofSpinor(Spinor)
 print('Final Spinor',Spinor)
 print('Final Direction',FinalDirection)
-#delta=G*Gamma-int(G*Gamma)
-#source.GenerateSpin(math.pi*(5-delta)+float(parameters['SnakeDirection_phis']),math.pi/2,Spinor)
-#source.GenerateSpin(float(parameters['SnakeDirection_phis']),math.pi/2,Spinor)
-#source.GeneratePartialSnakeSpin(float(parameters['SnakeStrength_phi']),G*Gamma,Spinor)
-#source.GenerateSpin(1.1,math.pi/2,Spinor)
-'''
-print('Spinor on n direction',Spinor)
-Direction2=source.CalDirectionofSpinor(Spinor)
-print('Direction of n Spinor:',Direction2)
-'''
-
-'''
-xp2=source.CalPorDegreeX(Spinor)
-print('X Polarization Degree after Transform',xp2)
-#print('Spinor After Transform',Spinor)
-'''
-
-
-'''
-
-CirleNum=0
-while (Gamma<FinalGamma):
-          GGamma=G*Gamma
-          theta1=math.pi
-          theta2=2*math.pi
-
-          for i in ResonanceData:
-               source.PartialResonanceKick(Spinor,GGamma,i,complex(ResonanceData[i]),0,theta1)
-               
-          if (parameters['UseSnake']=='1'):
-               source.Snake(Spinor,float(parameters['SnakeStrength_phi']),float(parameters['SnakeDirection_phis']))
-              
-          for i in ResonanceData:
-               source.PartialResonanceKick(Spinor,GGamma,i,complex(ResonanceData[i]),theta1,theta2)     
-               
-          CirleNum=CirleNum+1    
-          Gamma=Gamma+EnergyRisePerTurn
-
-print('final spinor', Spinor)
-print('Modules of the spinors', source.CalModules(Spinor))
-p=source.CalPorDegree(Spinor)
-print('final polarization degree',p)
-
-Direction3=source.CalDirectionofSpinor(Spinor)
-print('Final Direction of Spinor',Direction3)
-'''
 
 
 
-
-'''
-xp3=source.CalPorDegreeX(Spinor)
-print('Final X Polarization Degree ',xp3)
-
-yp3=source.CalPorDegreeY(Spinor)
-print('Final Y Polarization Degree',yp3)
-print(xp3*xp3+yp3*yp3+p*p)
-'''
-
-'''
-print('Finished accelartion after %d Circles' %CirleNum)
-
-#calcalute for verify F-S Equation and simulation
-alpha=G*EnergyRisePerTurn/(2*math.pi)
-_4piq=math.pi*abs(ResonanceStrength)*abs(ResonanceStrength)/(2*alpha)
-print('4piq',_4piq)
-
-fdata = open("FSData.txt", 'a+')  # a+ 如果文件不存在就创建。存在就在文件内容的后面继续追加
-
-
-fdata.write(str(_4piq))
-fdata.write(" ")
-fdata.write( str(p))
-fdata.write("\n")
-print("Successfully print", fdata)
-fdata.close()
-'''
 
 
 
